@@ -1,4 +1,4 @@
-This is a **[PyTorch](https://pytorch.org) Tutorial to Image Captioning**.
+# This is a **[PyTorch](https://pytorch.org) Tutorial to Image Captioning**.
 
 This is the first in [a series of tutorials](https://github.com/sgrvinod/Deep-Tutorials-for-PyTorch) I'm writing about _implementing_ cool models on your own with the amazing PyTorch library.
 
@@ -8,7 +8,9 @@ If you're new to PyTorch, first read [Deep Learning with PyTorch: A 60 Minute Bl
 
 Questions, suggestions, or corrections can be posted as issues.
 
-I'm using `PyTorch 0.4` in `Python 3.6`.
+**24-Nov-2020**: This repo was updated to work with PyTorch 1.7.0 and Python 3.7
+
+Also tested this with flick8k dataset, and added the option to change the backbone for the network, i.e. resnet18 and resnet101, and corresponding updates can be made in train.py
 
 ---
 
@@ -18,19 +20,19 @@ I'm using `PyTorch 0.4` in `Python 3.6`.
 
 # Contents
 
-[***Objective***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#objective)
+[**_Objective_**](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#objective)
 
-[***Concepts***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#concepts)
+[**_Concepts_**](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#concepts)
 
-[***Overview***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#overview)
+[**_Overview_**](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#overview)
 
-[***Implementation***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#implementation)
+[**_Implementation_**](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#implementation)
 
-[***Training***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#training)
+[**_Training_**](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#training)
 
-[***Inference***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#inference)
+[**_Inference_**](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#inference)
 
-[***Frequently Asked Questions***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#faqs)
+[**_Frequently Asked Questions_**](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#faqs)
 
 # Objective
 
@@ -78,15 +80,15 @@ There are more examples at the [end of the tutorial](https://github.com/sgrvinod
 
 # Concepts
 
-* **Image captioning**. duh.
+-   **Image captioning**. duh.
 
-* **Encoder-Decoder architecture**. Typically, a model that generates sequences will use an Encoder to encode the input into a fixed form and a Decoder to decode it, word by word, into a sequence.
+-   **Encoder-Decoder architecture**. Typically, a model that generates sequences will use an Encoder to encode the input into a fixed form and a Decoder to decode it, word by word, into a sequence.
 
-* **Attention**. The use of Attention networks is widespread in deep learning, and with good reason. This is a way for a model to choose only those parts of the encoding that it thinks is relevant to the task at hand. The same mechanism you see employed here can be used in any model where the Encoder's output has multiple points in space or time. In image captioning, you consider some pixels more important than others. In sequence to sequence tasks like machine translation, you consider some words more important than others.
+-   **Attention**. The use of Attention networks is widespread in deep learning, and with good reason. This is a way for a model to choose only those parts of the encoding that it thinks is relevant to the task at hand. The same mechanism you see employed here can be used in any model where the Encoder's output has multiple points in space or time. In image captioning, you consider some pixels more important than others. In sequence to sequence tasks like machine translation, you consider some words more important than others.
 
-* **Transfer Learning**. This is when you borrow from an existing model by using parts of it in a new model. This is almost always better than training a new model from scratch (i.e., knowing nothing). As you will see, you can always fine-tune this second-hand knowledge to the specific task at hand. Using pretrained word embeddings is a dumb but valid example. For our image captioning problem, we will use a pretrained Encoder, and then fine-tune it as needed.
+-   **Transfer Learning**. This is when you borrow from an existing model by using parts of it in a new model. This is almost always better than training a new model from scratch (i.e., knowing nothing). As you will see, you can always fine-tune this second-hand knowledge to the specific task at hand. Using pretrained word embeddings is a dumb but valid example. For our image captioning problem, we will use a pretrained Encoder, and then fine-tune it as needed.
 
-* **Beam Search**. This is where you don't let your Decoder be lazy and simply choose the words with the _best_ score at each decode-step. Beam Search is useful for any language modeling problem because it finds the most optimal sequence.
+-   **Beam Search**. This is where you don't let your Decoder be lazy and simply choose the words with the _best_ score at each decode-step. Beam Search is useful for any language modeling problem because it finds the most optimal sequence.
 
 # Overview
 
@@ -152,10 +154,10 @@ It might be clear by now what our combined network looks like.
 
 ![Putting it all together](./img/model.png)
 
-- Once the Encoder generates the encoded image, we transform the encoding to create the initial hidden state `h` (and cell state `C`) for the LSTM Decoder.
-- At each decode step,
-  - the encoded image and the previous hidden state is used to generate weights for each pixel in the Attention network.
-  - the previously generated word and the weighted average of the encoding are fed to the LSTM Decoder to generate the next word.
+-   Once the Encoder generates the encoded image, we transform the encoding to create the initial hidden state `h` (and cell state `C`) for the LSTM Decoder.
+-   At each decode step,
+    -   the encoded image and the previous hidden state is used to generate weights for each pixel in the Attention network.
+    -   the previously generated word and the weighted average of the encoding are fed to the LSTM Decoder to generate the next word.
 
 ### Beam Search
 
@@ -169,12 +171,12 @@ It would be best if we could somehow _not_ decide until we've finished decoding 
 
 Beam Search does exactly this.
 
-- At the first decode step, consider the top `k` candidates.
-- Generate `k` second words for each of these `k` first words.
-- Choose the top `k` [first word, second word] combinations considering additive scores.
-- For each of these `k` second words, choose `k` third words, choose the top `k` [first word, second word, third word] combinations.
-- Repeat at each decode step.
-- After `k` sequences terminate, choose the sequence with the best overall score.
+-   At the first decode step, consider the top `k` candidates.
+-   Generate `k` second words for each of these `k` first words.
+-   Choose the top `k` [first word, second word] combinations considering additive scores.
+-   For each of these `k` second words, choose `k` third words, choose the top `k` [first word, second word, third word] combinations.
+-   Repeat at each decode step.
+-   After `k` sequences terminate, choose the sequence with the best overall score.
 
 ![Beam Search example](./img/beam_search.png)
 
@@ -206,6 +208,7 @@ Pretrained ImageNet models available as part of PyTorch's `torchvision` module. 
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
 ```
+
 Also, PyTorch follows the NCHW convention, which means the channels dimension (C) must precede the size dimensions.
 
 We will resize all MSCOCO images to 256x256 for uniformity.
@@ -216,7 +219,7 @@ Therefore, **images fed to the model must be a `Float` tensor of dimension `N, 3
 
 Captions are both the target and the inputs of the Decoder as each word is used to generate the next word.
 
-To generate the first word, however, we need a *zeroth* word, `<start>`.
+To generate the first word, however, we need a _zeroth_ word, `<start>`.
 
 At the last word, we should predict `<end>` the Decoder must learn to predict the end of a caption. This is necessary because we need to know when to stop decoding during inference.
 
@@ -246,10 +249,10 @@ See `create_input_files()` in [`utils.py`](https://github.com/sgrvinod/a-PyTorch
 
 This reads the data downloaded and saves the following files –
 
-- An **HDF5 file containing images for each split in an `I, 3, 256, 256` tensor**, where `I` is the number of images in the split. Pixel values are still in the range [0, 255], and are stored as unsigned 8-bit `Int`s.
-- A **JSON file for each split with a list of `N_c` * `I` encoded captions**, where `N_c` is the number of captions sampled per image. These captions are in the same order as the images in the HDF5 file. Therefore, the `i`th caption will correspond to the `i // N_c`th image.
-- A **JSON file for each split with a list of `N_c` * `I` caption lengths**. The `i`th value is the length of the `i`th caption, which corresponds to the `i // N_c`th image.
-- A **JSON file which contains the `word_map`**, the word-to-index dictionary.
+-   An **HDF5 file containing images for each split in an `I, 3, 256, 256` tensor**, where `I` is the number of images in the split. Pixel values are still in the range [0, 255], and are stored as unsigned 8-bit `Int`s.
+-   A **JSON file for each split with a list of `N_c` \* `I` encoded captions**, where `N_c` is the number of captions sampled per image. These captions are in the same order as the images in the HDF5 file. Therefore, the `i`th caption will correspond to the `i // N_c`th image.
+-   A **JSON file for each split with a list of `N_c` \* `I` caption lengths**. The `i`th value is the length of the `i`th caption, which corresponds to the `i // N_c`th image.
+-   A **JSON file which contains the `word_map`**, the word-to-index dictionary.
 
 Before we save these files, we have the option to only use captions that are shorter than a threshold, and to bin less frequent words into an `<unk>` token.
 
@@ -356,17 +359,17 @@ I trained for 20 epochs, and the BLEU-4 score peaked at about `23.25` at the 13t
 
 I continued from the 13th epoch checkpoint allowing fine-tuning of the Encoder with a batch size of `32`. The smaller batch size is because the model is now larger because it contains the Encoder's gradients. With fine-tuning, the score rose to `24.29` in just about 3 epochs. Continuing training would probably have pushed the score slightly higher but I had to commit my GPU elsewhere.
 
-An important distinction to make here is that I'm still supplying the ground-truth as the input at each decode-step during validation, _regardless of the word last generated_. This is called __Teacher Forcing__. While this is commonly used during training to speed-up the process, as we are doing, conditions during validation must mimic real inference conditions as much as possible. I haven't implemented batched inference yet – where each word in the caption is generated from the previously generated word, and terminates upon hitting the `<end>` token.
+An important distinction to make here is that I'm still supplying the ground-truth as the input at each decode-step during validation, _regardless of the word last generated_. This is called **Teacher Forcing**. While this is commonly used during training to speed-up the process, as we are doing, conditions during validation must mimic real inference conditions as much as possible. I haven't implemented batched inference yet – where each word in the caption is generated from the previously generated word, and terminates upon hitting the `<end>` token.
 
 Since I'm teacher-forcing during validation, the BLEU score measured above on the resulting captions _does not_ reflect real performance. In fact, the BLEU score is a metric designed for comparing naturally generated captions to ground-truth captions of differing length. Once batched inference is implemented, i.e. no Teacher Forcing, early-stopping with the BLEU score will be truly 'proper'.
 
 With this in mind, I used [`eval.py`](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning/blob/master/eval.py) to compute the correct BLEU-4 scores of this model checkpoint on the validation and test sets _without_ Teacher Forcing, at different beam sizes –
 
-Beam Size | Validation BLEU-4 | Test BLEU-4 |
-:---: | :---: | :---: |
-1 | 29.98 | 30.28 |
-3 | 32.95 | 33.06 |
-5 | 33.17 | 33.29 |
+| Beam Size | Validation BLEU-4 | Test BLEU-4 |
+| :-------: | :---------------: | :---------: |
+|     1     |       29.98       |    30.28    |
+|     3     |       32.95       |    33.06    |
+|     5     |       33.17       |    33.29    |
 
 The test score is higher than the result in the paper, and could be because of how our BLEU calculators are parameterized, the fact that I used a ResNet encoder, and actually fine-tuned the encoder – even if just a little.
 
@@ -430,7 +433,7 @@ Also see [`eval.py`](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Cap
 
 # FAQs
 
-__You said__ ___soft___ __attention. Is there, um, a__ ___hard___ __attention?__
+**You said** **_soft_** **attention. Is there, um, a** **_hard_** **attention?**
 
 Yes, the _Show, Attend and Tell_ paper uses both variants, and the Decoder with "hard" attention performs marginally better.
 
@@ -440,7 +443,7 @@ In _hard_ attention, you are choosing to just sample some pixels from a distribu
 
 ---
 
-__How do I use an attention network for an NLP task like a sequence to sequence model?__
+**How do I use an attention network for an NLP task like a sequence to sequence model?**
 
 Much like you use a CNN to generate an encoding with features at each pixel, you would use an RNN to generate encoded features at each timestep i.e. word position in the input.
 
@@ -452,13 +455,13 @@ You could also use Attention without a Decoder. For example, if you want to clas
 
 ---
 
-__Can we use Beam Search during training?__
+**Can we use Beam Search during training?**
 
 Not with the current loss function, but [yes](https://arxiv.org/abs/1606.02960). This is not common at all.
 
 ---
 
-__What is Teacher Forcing?__
+**What is Teacher Forcing?**
 
 Teacher Forcing is when we use the ground truth captions as the input to the Decoder at each timestep, and not the word it generated in the previous timestep. It's common to teacher-force during training since it could mean faster convergence of the model. But it can also learn to depend on being told the correct answer, and exhibit some instability in practice.
 
@@ -468,12 +471,12 @@ It would be ideal to train using Teacher Forcing [only some of the time](https:/
 
 ---
 
-__Can I use pretrained word embeddings (GloVe, CBOW, skipgram, etc.) instead of learning them from scratch?__
+**Can I use pretrained word embeddings (GloVe, CBOW, skipgram, etc.) instead of learning them from scratch?**
 
 Yes, you could, with the `load_pretrained_embeddings()` method in the `Decoder` class. You could also choose to fine-tune (or not) with the `fine_tune_embeddings()` method.
 
 After creating the Decoder in [`train.py`](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning/blob/master/train.py), you should provide the pretrained vectors to `load_pretrained_embeddings()` stacked in the same order as in the `word_map`. For words that you don't have pretrained vectors for, like `<start>`, you can initialize embeddings randomly like we did in `init_weights()`. I recommend fine-tuning to learn more meaningful vectors for these randomly initialized vectors.
-  
+
 ```python
 decoder = DecoderWithAttention(attention_dim=attention_dim,
                                embed_dim=emb_dim,
@@ -483,21 +486,21 @@ decoder = DecoderWithAttention(attention_dim=attention_dim,
 decoder.load_pretrained_embeddings(pretrained_embeddings)  # pretrained_embeddings should be of dimensions (len(word_map), emb_dim)
 decoder.fine_tune_embeddings(True)  # or False
 ```
-  
+
 Also make sure to change the `emb_dim` parameter from its current value of `512` to the size of your pre-trained embeddings. This should automatically adjust the input size of the decoder LSTM to accomodate them.
 
 ---
 
-__How do I keep track of which tensors allow gradients to be computed?__
+**How do I keep track of which tensors allow gradients to be computed?**
 
 With the release of PyTorch `0.4`, wrapping tensors as `Variable`s is no longer required. Instead, tensors have the `requires_grad` attribute, which decides whether it is tracked by `autograd`, and therefore whether gradients are computed for it during backpropagation.
 
-- By default, when you create a tensor from scratch, `requires_grad` will be set to `False`.
-- When a tensor is created from or modified using another tensor that allows gradients, then `requires_grad` will be set to `True`.
-- Tensors which are parameters of `torch.nn` layers will already have `requires_grad` set to `True`.
+-   By default, when you create a tensor from scratch, `requires_grad` will be set to `False`.
+-   When a tensor is created from or modified using another tensor that allows gradients, then `requires_grad` will be set to `True`.
+-   Tensors which are parameters of `torch.nn` layers will already have `requires_grad` set to `True`.
 
 ---
 
-__How do I compute all BLEU (i.e. BLEU-1 to BLEU-4) scores during evaluation?__
+**How do I compute all BLEU (i.e. BLEU-1 to BLEU-4) scores during evaluation?**
 
-You'd need to modify the code in [`eval.py`](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning/blob/master/eval.py) to do this. Please see [this excellent answer](<https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning/issues/37#issuecomment-455924998>) by [kmario23](<https://github.com/kmario23>) for a clear and detailed explanation.
+You'd need to modify the code in [`eval.py`](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning/blob/master/eval.py) to do this. Please see [this excellent answer](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning/issues/37#issuecomment-455924998) by [kmario23](https://github.com/kmario23) for a clear and detailed explanation.
