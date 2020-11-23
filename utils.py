@@ -224,7 +224,7 @@ def load_embeddings(emb_file, word_map):
     vocab = set(word_map.keys())
 
     # Create tensor to hold embeddings, initialize
-    embeddings = torch.FloatTensor(len(vocab), emb_dim)
+    embeddings = torch.randn(len(vocab), emb_dim)
     init_embedding(embeddings)
 
     # Read embedding file
@@ -241,7 +241,7 @@ def load_embeddings(emb_file, word_map):
         if emb_word not in vocab:
             continue
 
-        embeddings[word_map[emb_word]] = torch.FloatTensor(embedding)
+        embeddings[word_map[emb_word]] = torch.tensor(embedding, dtype=torch.float32)
 
     return embeddings, emb_dim
 

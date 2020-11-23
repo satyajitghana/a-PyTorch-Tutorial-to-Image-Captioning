@@ -95,9 +95,7 @@ def evaluate(beam_size):
         )  # (k, num_pixels, encoder_dim)
 
         # Tensor to store top k previous words at each step; now they're just <start>
-        k_prev_words = torch.LongTensor([[word_map["<start>"]]] * k).to(
-            device
-        )  # (k, 1)
+        k_prev_words = torch.tensor([[word_map["<start>"]]] * k, dtype=torch.long)  # (k, 1)
 
         # Tensor to store top k sequences; now they're just <start>
         seqs = k_prev_words  # (k, 1)

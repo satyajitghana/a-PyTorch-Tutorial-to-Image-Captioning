@@ -43,20 +43,20 @@ class CaptionDataset(Dataset):
 
     def __getitem__(self, i):
         # Remember, the Nth caption corresponds to the (N // captions_per_image)th image
-        img = torch.FloatTensor(self.imgs[i // self.cpi] / 255.)
+        img = torch.tensor(self.imgs[i // self.cpi] / 255., dtype=torch.float32)
         if self.transform is not None:
             img = self.transform(img)
 
-        caption = torch.LongTensor(self.captions[i])
+        caption = torch.tensor(self.captions[i], dtype=torch.long)
 
-        caplen = torch.LongTensor([self.caplens[i]])
+        caplen = torch.tensor([self.caplens[i]], dtype=torch.long)
 
         if self.split is 'TRAIN':
             return img, caption, caplen
         else:
             # For validation of testing, also return all 'captions_per_image' captions to find BLEU-4 score
-            all_captions = torch.LongTensor(
-                self.captions[((i // self.cpi) * self.cpi):(((i // self.cpi) * self.cpi) + self.cpi)])
+            all_captions = torch.tensor(
+                self.captions[((i // self.cpi) * self.cpi):(((i // self.cpi) * self.cpi) + self.cpi)], dtype=torch.long)
             return img, caption, caplen, all_captions
 
     def __len__(self):

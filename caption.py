@@ -55,7 +55,7 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
     )  # (k, num_pixels, encoder_dim)
 
     # Tensor to store top k previous words at each step; now they're just <start>
-    k_prev_words = torch.LongTensor([[word_map["<start>"]]] * k).to(device)  # (k, 1)
+    k_prev_words = torch.tensor([[word_map["<start>"]]] * k, dtype=torch.long)  # (k, 1)
 
     # Tensor to store top k sequences; now they're just <start>
     seqs = k_prev_words  # (k, 1)
@@ -243,7 +243,7 @@ if __name__ == "__main__":
 
     print(f"=> CAPTION: {''.join([ rev_word_map[ind] for ind in seq ])}")
 
-    alphas = torch.FloatTensor(alphas)
+    alphas = torch.tensor(alphas, dtype=torch.float32)
 
     # Visualize caption and attention of best sequence
     # visualize_att(args.img, seq, alphas, rev_word_map, args.smooth)
