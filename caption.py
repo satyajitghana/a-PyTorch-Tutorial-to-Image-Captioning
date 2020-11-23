@@ -2,12 +2,10 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 import json
-import torchvision.transforms as transforms
+import torchvision.transforms as T
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-import skimage.transform
 import argparse
-from scipy.misc import imread, imresize
 from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,18 +27,15 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
     vocab_size = len(word_map)
 
     # Read image and process
-    img = imread(image_path)
-    if len(img.shape) == 2:
-        img = img[:, :, np.newaxis]
-        img = np.concatenate([img, img, img], axis=2)
-    img = imresize(img, (256, 256))
-    img = img.transpose(2, 0, 1)
-    img = img / 255.
-    img = torch.FloatTensor(img).to(device)
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    transform = transforms.Compose([normalize])
-    image = transform(img)  # (3, 256, 256)
+    img = Image.open(image_path)
+
+    trans = T.Compose([
+        T.Resize((256, 256)),
+        T.ToTensor(),
+        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    image = trans(img) # (3, 256, 256)
 
     # Encode
     image = image.unsqueeze(0)  # (1, 3, 256, 256)
