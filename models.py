@@ -10,13 +10,18 @@ class Encoder(nn.Module):
     Encoder.
     """
 
-    def __init__(self, encoded_image_size=14):
+    def __init__(self, encoded_image_size=14, backbone="resnet101"):
         super(Encoder, self).__init__()
         self.enc_image_size = encoded_image_size
 
-        resnet = torchvision.models.resnet101(
-            pretrained=True
-        )  # pretrained ImageNet ResNet-101
+        if backbone == "resnet101":
+            resnet = torchvision.models.resnet101(
+                pretrained=True
+            )  # pretrained ImageNet ResNet-101
+        elif backbone == "resnet18":
+            resnet = torchvision.models.resnet18(
+                pretrained=True
+            )  # pretrained ImageNet ResNet-18
 
         # Remove linear and pool layers (since we're not doing classification)
         modules = list(resnet.children())[:-2]

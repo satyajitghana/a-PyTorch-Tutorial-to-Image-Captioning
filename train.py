@@ -20,6 +20,8 @@ data_name = "coco_5_cap_per_img_5_min_word_freq"  # base name shared by data fil
 emb_dim = 512  # dimension of word embeddings
 attention_dim = 512  # dimension of attention linear layers
 decoder_dim = 512  # dimension of decoder RNN
+backbone = "resnet18"
+encoder_dim = 512  # dimension from the resnet backbone
 dropout = 0.5
 device = torch.device(
     "cuda" if torch.cuda.is_available() else "cpu"
@@ -64,12 +66,13 @@ def main():
             decoder_dim=decoder_dim,
             vocab_size=len(word_map),
             dropout=dropout,
+            encoder_dim=encoder_dim,
         )
         decoder_optimizer = torch.optim.Adam(
             params=filter(lambda p: p.requires_grad, decoder.parameters()),
             lr=decoder_lr,
         )
-        encoder = Encoder()
+        encoder = Encoder(backbone=backbone)
         encoder.fine_tune(fine_tune_encoder)
         encoder_optimizer = (
             torch.optim.Adam(
@@ -227,8 +230,8 @@ def train(
 
         # Remove timesteps that we didn't decode at, or are pads
         # pack_padded_sequence is an easy trick to do this
-        scores, _ = pack_padded_sequence(scores, decode_lengths, batch_first=True)
-        targets, _ = pack_padded_sequence(targets, decode_lengths, batch_first=True)
+        scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
+        targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
 
         # Calculate loss
         loss = criterion(scores, targets)
@@ -327,8 +330,10 @@ def validate(val_loader, encoder, decoder, criterion):
             # Remove timesteps that we didn't decode at, or are pads
             # pack_padded_sequence is an easy trick to do this
             scores_copy = scores.clone()
-            scores, _ = pack_padded_sequence(scores, decode_lengths, batch_first=True)
-            targets, _ = pack_padded_sequence(targets, decode_lengths, batch_first=True)
+            scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
+            targets = pack_padded_sequence(
+                targets, decode_lengths, batch_first=True
+            ).data
 
             # Calculate loss
             loss = criterion(scores, targets)
